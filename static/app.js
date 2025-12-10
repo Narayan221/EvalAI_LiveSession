@@ -48,11 +48,8 @@ function speakText(text) {
     };
     
     utterance.onend = function() {
-        updateVoiceStatus('🔇 AI Finished');
-        // Restart listening after AI finishes speaking
-        setTimeout(() => {
-            startListening();
-        }, 800);
+        updateVoiceStatus('🎤 Always Listening (can interrupt)');
+        // Voice recognition continues automatically
     };
     
     utterance.onerror = function(event) {
@@ -68,7 +65,7 @@ function speakText(text) {
 function initSpeechRecognition() {
     if ('webkitSpeechRecognition' in window) {
         recognition = new webkitSpeechRecognition();
-        recognition.continuous = false;
+        recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = 'en-US';
         recognition.maxAlternatives = 1;
@@ -87,6 +84,12 @@ function initSpeechRecognition() {
             
             transcript = transcript.trim();
             if (transcript.length > 0) {
+                // Stop AI if it's currently speaking (interruption)
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                    updateVoiceStatus('🛑 Interrupted AI');
+                }
+                
                 updateVoiceStatus('Processing...');
                 addMessage('You', transcript, 'user');
                 
@@ -117,14 +120,14 @@ function initSpeechRecognition() {
         
         recognition.onend = function() {
             isListening = false;
-            updateVoiceStatus('🔇 Stopped');
+            updateVoiceStatus('🔄 Restarting...');
             
-            // Auto-restart after AI finishes speaking
+            // Immediately restart for continuous listening
             setTimeout(() => {
-                if (!speechSynthesis.speaking && document.getElementById('sessionActive').style.display !== 'none') {
+                if (document.getElementById('sessionActive').style.display !== 'none') {
                     startListening();
                 }
-            }, 1500);
+            }, 300);
         };
     } else {
         addMessage('System', 'Voice recognition not supported. Use Chrome/Edge browser.', 'ai');
@@ -150,11 +153,7 @@ function startListening() {
         return; // Already listening
     }
     
-    if (speechSynthesis.speaking) {
-        // Wait for AI to finish speaking
-        setTimeout(() => startListening(), 1000);
-        return;
-    }
+    // Allow starting even while AI is speaking for interruptions
     
     try {
         recognition.start();
@@ -204,7 +203,7 @@ function startAISession() {
     
     // Start listening after AI gives initial response
     setTimeout(() => {
-        addMessage('System', '🎤 Voice conversation active. Start speaking after AI finishes.', 'ai');
+        addMessage('System', '🎤 INTERRUPTION MODE: Speak anytime to interrupt AI mid-sentence!', 'ai');
         setTimeout(() => {
             startListening();
         }, 3000);
