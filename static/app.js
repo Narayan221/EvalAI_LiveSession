@@ -4,6 +4,7 @@ let peerConnection;
 let recognition;
 let isListening = false;
 let speechSynthesis = window.speechSynthesis;
+let isAIMainView = true; // true = AI main, false = User main
 
 // WebSocket connection
 function connectWebSocket() {
@@ -14,6 +15,7 @@ function connectWebSocket() {
         
         if (data.type === 'ai_response') {
             addMessage('AI', data.content, 'ai');
+
             if (data.speak) {
                 speakText(data.content);
             }
@@ -45,11 +47,13 @@ function speakText(text) {
     
     utterance.onstart = function() {
         updateVoiceStatus('🔊 AI Speaking...');
+        animateAIAvatar(true);
     };
     
     utterance.onend = function() {
         updateVoiceStatus('🎤 Always Listening (can interrupt)');
-        // Voice recognition continues automatically
+        animateAIAvatar(false);
+        updateAICaption('Ready for your response...');
     };
     
     utterance.onerror = function(event) {
@@ -92,6 +96,7 @@ function initSpeechRecognition() {
                 
                 updateVoiceStatus('Processing...');
                 addMessage('You', transcript, 'user');
+
                 
                 if (ws && ws.readyState === WebSocket.OPEN) {
                     ws.send(JSON.stringify({
@@ -139,6 +144,61 @@ function updateVoiceStatus(status) {
     const statusDiv = document.getElementById('voiceStatus');
     if (statusDiv) {
         statusDiv.textContent = status;
+    }
+}
+
+
+
+// Switch between AI main view and User main view
+function switchView() {
+    const aiMainView = document.getElementById('aiMainView');
+    const userMainView = document.getElementById('userMainView');
+    const aiPipView = document.getElementById('aiPipView');
+    const userPipView = document.getElementById('userPipView');
+    const mainLabel = document.getElementById('mainLabel');
+    
+    if (isAIMainView) {
+        // Switch to User main view
+        aiMainView.style.display = 'none';
+        userMainView.style.display = 'block';
+        aiPipView.style.display = 'flex';
+        userPipView.style.display = 'none';
+        mainLabel.textContent = 'You';
+        
+        // Connect user video to main view
+        if (localStream) {
+            userMainView.srcObject = localStream;
+        }
+        
+        isAIMainView = false;
+    } else {
+        // Switch to AI main view
+        aiMainView.style.display = 'flex';
+        userMainView.style.display = 'none';
+        aiPipView.style.display = 'none';
+        userPipView.style.display = 'block';
+        mainLabel.textContent = 'AI Assistant';
+        
+        // Connect user video to PIP view
+        if (localStream) {
+            userPipView.srcObject = localStream;
+        }
+        
+        isAIMainView = true;
+    }
+}
+
+// Animate AI avatar
+function animateAIAvatar(speaking) {
+    const avatar = document.querySelector('.ai-avatar');
+    if (avatar) {
+        if (speaking) {
+            avatar.style.animation = 'pulse 1s infinite';
+            avatar.style.transform = 'scale(1.1)';
+        } else {
+            avatar.style.animation = 'none';
+            avatar.style.transform = 'scale(1)';
+        }
     }
 }
 
@@ -203,7 +263,8 @@ function startAISession() {
     
     // Start listening after AI gives initial response
     setTimeout(() => {
-        addMessage('System', '🎤 INTERRUPTION MODE: Speak anytime to interrupt AI mid-sentence!', 'ai');
+        addMessage('System', '🎤 Video call started! Speak anytime to interrupt AI.', 'ai');
+
         setTimeout(() => {
             startListening();
         }, 3000);
@@ -250,6 +311,24 @@ function endSession() {
     document.getElementById('chatContainer').innerHTML = '';
     document.getElementById('sessionTitle').value = '';
     document.getElementById('sessionDescription').value = '';
+    
+    // Reset view
+    isAIMainView = true;
+    
+    // Reset video views
+    const aiMainView = document.getElementById('aiMainView');
+    const userMainView = document.getElementById('userMainView');
+    const aiPipView = document.getElementById('aiPipView');
+    const userPipView = document.getElementById('userPipView');
+    const mainLabel = document.getElementById('mainLabel');
+    
+    if (aiMainView) {
+        aiMainView.style.display = 'flex';
+        userMainView.style.display = 'none';
+        aiPipView.style.display = 'none';
+        userPipView.style.display = 'block';
+        mainLabel.textContent = 'AI Assistant';
+    }
 }
 
 // Chat functionality
@@ -284,7 +363,8 @@ async function setupCamera() {
             audio: true
         });
         
-        document.getElementById('localVideo').srcObject = localStream;
+        // Set video to PIP view initially (AI is main)
+        document.getElementById('userPipView').srcObject = localStream;
         
     } catch (error) {
         console.error('Error accessing camera:', error);

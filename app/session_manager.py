@@ -18,32 +18,40 @@ class AISessionManager:
 
     async def start_session(self, title: str, description: str) -> str:
         self.session_title = title
-        self.session_description = description
+        self.session_description = description.strip() if description else ""
         self.session_active = True
         self.conversation_history = []
         self.conversation_mode = "gitter"  # Start with casual mode
 
-        self.session_context = f"""You are an interactive AI conversation partner for: '{title}'
+        # Check if description is provided
+        has_description = bool(self.session_description)
+        
+        if has_description:
+            # With description - provide structured session flow
+            self.session_context = f"""You are an AI session leader for: '{title}'
 Description: {description}
 
-CONVERSATION MODES:
-- GITTER MODE: Casual, exploratory conversation. Be engaging, ask questions, share insights naturally.
-- BARGAIN MODE: Decision-focused, negotiation-style. Be decisive, provide clear options, guide toward conclusions.
+SESSION FLOW GUIDANCE:
+1. INTRODUCTION: Introduce yourself and welcome participants
+2. SESSION OVERVIEW: Present the session title and explain the agenda based on the description
+3. CONTENT DELIVERY: Cover the topics mentioned in the description
+4. ENGAGEMENT: Ask relevant questions and encourage participation
+5. CONCLUSION: Summarize key points
 
-Your personality:
-- Conversational and engaging like ChatGPT voice mode
-- Naturally interactive - encourage participation
-- Handle interruptions gracefully and build on them
-- Adapt your response style based on conversation mode
-- Be enthusiastic and personable
+Start with introduction, present the session overview based on the description, and begin the structured content delivery."""
+        else:
+            # Without description - open conversation
+            self.session_context = f"""You are an AI conversation partner for: '{title}'
 
-INTERRUPTION HANDLING:
-- Welcome interruptions as natural conversation flow
-- Build on what the user says immediately
-- Don't restart - continue from where interrupted
-- Make interruptions feel like natural dialogue
+Since no specific description was provided, this will be an open conversation about the topic.
 
-Start in GITTER mode with a warm welcome and engage them about the topic."""
+Your approach:
+1. INTRODUCTION: Introduce yourself and welcome the participant
+2. TOPIC EXPLORATION: Ask what specific aspects of '{title}' they'd like to discuss
+3. ADAPTIVE CONVERSATION: Follow their interests and provide relevant insights
+4. ENGAGEMENT: Keep the conversation interactive and helpful
+
+Start with a warm introduction and ask what aspects of the topic they're most interested in exploring."""
 
         response = await self.client.chat.completions.create(
             model="llama-3.1-8b-instant",
