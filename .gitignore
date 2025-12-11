@@ -74,3 +74,35 @@ coverage.xml
 .mypy_cache/
 .dmypy.json
 dmypy.json
+
+# Project specific
+*.webm
+*.mp4
+*.wav
+*.mp3
+recordings/
+session-recordings/
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Documentation builds
+docs/_build/
+site/
+
+# Package files
+*.tar.gz
+*.zip
+*.rar
+
+# Runtime
+pid.txt
+*.pid
+*.lock

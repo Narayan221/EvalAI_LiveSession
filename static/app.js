@@ -53,7 +53,6 @@ function speakText(text) {
     utterance.onend = function() {
         updateVoiceStatus('🎤 Always Listening (can interrupt)');
         animateAIAvatar(false);
-        updateAICaption('Ready for your response...');
     };
     
     utterance.onerror = function(event) {
@@ -80,9 +79,13 @@ function initSpeechRecognition() {
         
         recognition.onresult = function(event) {
             let transcript = '';
+            let interimTranscript = '';
+            
             for (let i = event.resultIndex; i < event.results.length; i++) {
                 if (event.results[i].isFinal) {
                     transcript += event.results[i][0].transcript;
+                } else {
+                    interimTranscript += event.results[i][0].transcript;
                 }
             }
             
@@ -147,8 +150,6 @@ function updateVoiceStatus(status) {
     }
 }
 
-
-
 // Switch between AI main view and User main view
 function switchView() {
     const aiMainView = document.getElementById('aiMainView');
@@ -191,13 +192,21 @@ function switchView() {
 // Animate AI avatar
 function animateAIAvatar(speaking) {
     const avatar = document.querySelector('.ai-avatar');
+    const pipAvatar = document.querySelector('.pip-ai-avatar');
+    
     if (avatar) {
         if (speaking) {
-            avatar.style.animation = 'pulse 1s infinite';
-            avatar.style.transform = 'scale(1.1)';
+            avatar.classList.add('speaking');
         } else {
-            avatar.style.animation = 'none';
-            avatar.style.transform = 'scale(1)';
+            avatar.classList.remove('speaking');
+        }
+    }
+    
+    if (pipAvatar) {
+        if (speaking) {
+            pipAvatar.style.animation = 'aiTalking 1.5s ease-in-out infinite';
+        } else {
+            pipAvatar.style.animation = 'none';
         }
     }
 }
@@ -212,8 +221,6 @@ function startListening() {
     if (isListening) {
         return; // Already listening
     }
-    
-    // Allow starting even while AI is speaking for interruptions
     
     try {
         recognition.start();
@@ -261,31 +268,37 @@ function startAISession() {
         };
     }
     
-    // Start listening after AI gives initial response
+    // Auto-start listening only
     setTimeout(() => {
-        addMessage('System', '🎤 Video call started! Speak anytime to interrupt AI.', 'ai');
-
+        addMessage('System', '🎤 Session started!', 'ai');
+        
         setTimeout(() => {
             startListening();
-        }, 3000);
+        }, 2000);
     }, 1000);
-    
-
 }
-
-
 
 // Stop voice recognition
 function stopVoiceRecognition() {
-    if (recognition && isListening) {
-        recognition.stop();
+    if (recognition) {
+        try {
+            recognition.abort();
+            recognition.stop();
+            recognition = null;
+        } catch (e) {
+            console.log('Recognition stop error:', e);
+        }
         isListening = false;
+        updateVoiceStatus('🔇 Voice Stopped');
     }
 }
 
 // End session
 function endSession() {
-    // Stop voice recognition
+    console.log('Ending session...');
+    addMessage('System', '🔄 Ending session...', 'ai');
+    
+    // Force stop voice recognition
     stopVoiceRecognition();
     
     // Stop speech synthesis
@@ -299,36 +312,61 @@ function endSession() {
         ws = null;
     }
     
-    // Stop camera
+    // Force stop all media tracks
     if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
+        console.log('Stopping media tracks...');
+        localStream.getTracks().forEach(track => {
+            track.stop();
+            track.enabled = false;
+            console.log(`Force stopped ${track.kind} track, state:`, track.readyState);
+        });
         localStream = null;
     }
     
-    // Reset UI
-    document.getElementById('sessionSetup').style.display = 'block';
-    document.getElementById('sessionActive').style.display = 'none';
-    document.getElementById('chatContainer').innerHTML = '';
-    document.getElementById('sessionTitle').value = '';
-    document.getElementById('sessionDescription').value = '';
+    // Additional cleanup - stop any remaining media
+    navigator.mediaDevices.getUserMedia({ audio: false, video: false }).catch(() => {});
     
-    // Reset view
-    isAIMainView = true;
-    
-    // Reset video views
-    const aiMainView = document.getElementById('aiMainView');
-    const userMainView = document.getElementById('userMainView');
-    const aiPipView = document.getElementById('aiPipView');
+    // Clear video elements
     const userPipView = document.getElementById('userPipView');
-    const mainLabel = document.getElementById('mainLabel');
-    
-    if (aiMainView) {
-        aiMainView.style.display = 'flex';
-        userMainView.style.display = 'none';
-        aiPipView.style.display = 'none';
-        userPipView.style.display = 'block';
-        mainLabel.textContent = 'AI Assistant';
+    const userMainView = document.getElementById('userMainView');
+    if (userPipView) {
+        userPipView.srcObject = null;
+        userPipView.load();
     }
+    if (userMainView) {
+        userMainView.srcObject = null;
+        userMainView.load();
+    }
+    
+    // Reset UI
+    setTimeout(() => {
+        document.getElementById('sessionSetup').style.display = 'block';
+        document.getElementById('sessionActive').style.display = 'none';
+        document.getElementById('chatContainer').innerHTML = '';
+        document.getElementById('sessionTitle').value = '';
+        document.getElementById('sessionDescription').value = '';
+        
+        // Reset view state
+        isAIMainView = true;
+        
+        // Reset video views
+        const aiMainView = document.getElementById('aiMainView');
+        const userMainView = document.getElementById('userMainView');
+        const aiPipView = document.getElementById('aiPipView');
+        const userPipView = document.getElementById('userPipView');
+        const mainLabel = document.getElementById('mainLabel');
+        
+        if (aiMainView) {
+            aiMainView.style.display = 'flex';
+            userMainView.style.display = 'none';
+            aiPipView.style.display = 'none';
+            userPipView.style.display = 'block';
+            mainLabel.textContent = 'AI Assistant';
+        }
+        
+        updateVoiceStatus('🔇 Session Ended');
+        console.log('Session cleanup complete');
+    }, 500);
 }
 
 // Chat functionality
@@ -359,12 +397,14 @@ function addMessage(sender, content, className) {
 async function setupCamera() {
     try {
         localStream = await navigator.mediaDevices.getUserMedia({
-            video: true,
+            video: { width: 1280, height: 720 },
             audio: true
         });
         
         // Set video to PIP view initially (AI is main)
         document.getElementById('userPipView').srcObject = localStream;
+        
+        console.log('Camera setup complete, stream tracks:', localStream.getTracks().length);
         
     } catch (error) {
         console.error('Error accessing camera:', error);
@@ -392,3 +432,19 @@ document.getElementById('messageInput').addEventListener('keypress', function(e)
 window.onload = function() {
     // Show setup form on load
 };
+
+// Handle page refresh/close - cleanup media
+window.addEventListener('beforeunload', function(e) {
+    if (localStream) {
+        localStream.getTracks().forEach(track => {
+            track.stop();
+            console.log(`Cleanup: stopped ${track.kind} track`);
+        });
+    }
+    if (recognition) {
+        recognition.abort();
+    }
+    if (ws) {
+        ws.close();
+    }
+});

@@ -62,8 +62,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 
     except Exception as e:
         print(f"WebSocket error: {e}")
-    finally:
-        await websocket.close()
+    # Remove the finally block that was causing double close
 
 if __name__ == "__main__":
     import uvicorn

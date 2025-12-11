@@ -5,7 +5,7 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             color: #2c3e50;
             min-height: 100vh;
@@ -14,84 +14,107 @@
         .container { 
             max-width: 800px; 
             margin: 0 auto; 
-            padding: 15px;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
         .header {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 10px 0;
+            padding: 20px 20px 10px 20px;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
         }
         .header h1 {
-            font-size: 1.8rem;
-            font-weight: 600;
+            font-size: 1.5rem;
+            font-weight: 700;
             color: #2c3e50;
             margin-bottom: 5px;
         }
         .header p {
             color: #7f8c8d;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 400;
         }
         .session-setup {
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 25px 20px;
+            margin: 20px;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
-        }
-        .session-setup:hover {
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         .setup-form {
             margin-bottom: 15px;
         }
         .setup-form input {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            background: #f8f9fa;
+            padding: 16px 20px;
+            border: 1px solid #e1e8ed;
+            border-radius: 25px;
+            background: #fff;
             color: #2c3e50;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s ease;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
         .setup-form textarea {
             width: 100%;
-            padding: 12px 16px;
-            border: 2px solid #e1e8ed;
-            border-radius: 8px;
-            background: #f8f9fa;
+            padding: 16px 20px;
+            border: 1px solid #e1e8ed;
+            border-radius: 20px;
+            background: #fff;
             color: #2c3e50;
-            font-size: 14px;
+            font-size: 16px;
             transition: all 0.3s ease;
             resize: vertical;
-            min-height: 80px;
+            min-height: 100px;
             font-family: inherit;
         }
         .setup-form input:focus, .setup-form textarea:focus {
             outline: none;
             border-color: #3498db;
-            background: white;
-            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+            box-shadow: 0 0 10px rgba(52,152,219,0.2);
         }
         .setup-form input::placeholder, .setup-form textarea::placeholder {
             color: #95a5a6;
         }
         .start-btn {
             width: 100%;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            padding: 18px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+        .session-layout {
+            display: flex;
+            height: 70vh;
+            width: 100%;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .camera-section {
+            width: 45%;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+        }
+        .chat-section {
+            width: 55%;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+            border-left: 1px solid #e1e8ed;
         }
         .video-call-container { 
             position: relative;
-            height: 250px;
-            margin-bottom: 15px;
-            background: white;
-            border-radius: 12px;
+            width: 100%;
+            height: calc(70vh - 50px);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             overflow: hidden;
-            border: 1px solid #e1e8ed;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
             transition: all 0.3s ease;
         }
         .video-call-container:hover {
@@ -108,7 +131,17 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+        .ai-main-view::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at center, rgba(255,255,255,0.1) 0%, transparent 70%);
         }
         .user-main-view {
             width: 100%;
@@ -120,29 +153,40 @@
             width: 80px; 
             height: 80px; 
             border-radius: 50%; 
-            background: rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             display: flex; 
             align-items: center; 
             justify-content: center; 
             font-size: 35px; 
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
             transition: all 0.3s ease;
+            backdrop-filter: blur(20px);
+            z-index: 2;
+        }
+        .ai-avatar.speaking {
+            animation: aiTalking 1.5s ease-in-out infinite;
+        }
+        @keyframes aiTalking {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.05) rotate(-1deg); }
+            50% { transform: scale(1.1) rotate(0deg); }
+            75% { transform: scale(1.05) rotate(1deg); }
         }
         .pip-video {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 100px;
-            height: 75px;
-            border-radius: 8px;
+            top: 15px;
+            right: 15px;
+            width: 70px;
+            height: 90px;
+            border-radius: 15px;
             overflow: hidden;
             background: rgba(0, 0, 0, 0.8);
-            border: 2px solid white;
+            border: 2px solid rgba(255, 255, 255, 0.4);
             cursor: pointer;
             transition: all 0.3s ease;
             z-index: 10;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
         }
         .pip-video:hover {
             transform: scale(1.05);
@@ -190,18 +234,28 @@
         }
         .switch-view-btn {
             position: absolute;
-            bottom: 10px;
-            right: 10px;
-            background: #3498db;
-            border: none;
+            bottom: 20px;
+            left: 20px;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            border: 2px solid rgba(255,255,255,0.8);
             color: white;
-            padding: 8px 12px;
-            border-radius: 15px;
+            padding: 12px;
+            border-radius: 50%;
             cursor: pointer;
-            font-size: 11px;
-            font-weight: 500;
+            font-size: 16px;
             transition: all 0.3s ease;
             z-index: 10;
+            backdrop-filter: blur(10px);
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(52,152,219,0.4);
+        }
+        .switch-view-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(52,152,219,0.6);
         }
         .switch-view-btn:hover {
             background: #2980b9;
@@ -210,23 +264,21 @@
 
         .status-bar {
             text-align: center;
-            margin: 8px 0;
-            padding: 8px 16px;
-            background: #ecf0f1;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 10px 15px;
+            background: rgba(0,0,0,0.05);
+            font-size: 11px;
             color: #7f8c8d;
-            border: 1px solid #bdc3c7;
+            font-weight: 500;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         .chat-container { 
-            background: white;
-            border: 1px solid #e1e8ed;
-            border-radius: 8px; 
-            height: 160px; 
+            background: transparent;
+            flex: 1;
             overflow-y: auto; 
-            padding: 15px; 
-            margin-bottom: 15px;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+            padding: 20px; 
         }
         .chat-container::-webkit-scrollbar {
             width: 4px;
@@ -239,13 +291,14 @@
             border-radius: 2px;
         }
         .message { 
-            margin-bottom: 12px; 
-            padding: 12px 16px; 
-            border-radius: 16px; 
-            max-width: 80%;
+            margin-bottom: 15px; 
+            padding: 15px 20px; 
+            border-radius: 25px; 
+            max-width: 85%;
             word-wrap: break-word;
             transition: all 0.3s ease;
             animation: messageSlide 0.3s ease;
+            font-size: 15px;
         }
         @keyframes messageSlide {
             from { opacity: 0; transform: translateY(10px); }
@@ -263,20 +316,18 @@
         }
         .controls { 
             display: flex; 
-            gap: 10px; 
+            gap: 8px; 
             align-items: center;
-            background: white;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #e1e8ed;
-            box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-top: 1px solid #e1e8ed;
         }
         .controls input[type="text"] { 
             flex: 1; 
-            padding: 10px 12px; 
-            border-radius: 6px; 
+            padding: 10px 14px; 
+            border-radius: 18px; 
             border: 1px solid #e1e8ed;
-            background: #f8f9fa;
+            background: #fff;
             color: #2c3e50;
             font-size: 13px;
             transition: all 0.3s ease;
@@ -284,7 +335,7 @@
         .controls input[type="text"]:focus {
             outline: none;
             border-color: #3498db;
-            background: white;
+            box-shadow: 0 0 5px rgba(52,152,219,0.2);
         }
         .controls input[type="text"]::placeholder {
             color: #95a5a6;
@@ -296,12 +347,12 @@
         }
         button { 
             padding: 10px 16px; 
-            border-radius: 6px; 
+            border-radius: 18px; 
             border: none; 
             background: #3498db;
             color: white; 
             cursor: pointer;
-            font-weight: 500;
+            font-weight: 600;
             font-size: 13px;
             transition: all 0.3s ease;
             white-space: nowrap;
@@ -309,9 +360,11 @@
         button:hover {
             background: #2980b9;
         }
-        button:hover { 
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        .end-btn {
+            background: #e74c3c;
+        }
+        .end-btn:hover {
+            background: #c0392b;
         }
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -328,11 +381,24 @@
         .speaking {
             animation: pulse 1.5s infinite;
         }
+
         @media (max-width: 768px) {
-            .video-call-container { height: 200px; }
-            .pip-video { width: 80px; height: 60px; }
+            .container { padding: 10px; }
+            .session-layout {
+                flex-direction: column;
+                height: 80vh;
+            }
+            .camera-section, .chat-section {
+                width: 100%;
+            }
+            .camera-section {
+                height: 40vh;
+            }
+            .video-call-container {
+                height: calc(40vh - 40px);
+            }
+            .pip-video { width: 60px; height: 75px; }
             .ai-avatar { width: 60px; height: 60px; font-size: 25px; }
-            .chat-container { height: 80px; }
         }
         @media (max-width: 480px) {
             .controls { 
@@ -358,38 +424,41 @@
         </div>
         
         <div id="sessionActive" style="display: none;">
-            <div class="video-call-container">
-                <!-- Main Video Display -->
-                <div class="main-video" id="mainVideo">
-                    <div class="ai-main-view" id="aiMainView">
-                        <div class="ai-avatar" id="mainAiAvatar">🤖</div>
+            <div class="session-layout">
+                <!-- Left Side - Camera -->
+                <div class="camera-section">
+                    <div class="video-call-container">
+                        <div class="main-video" id="mainVideo">
+                            <div class="ai-main-view" id="aiMainView">
+                                <div class="ai-avatar" id="mainAiAvatar">🤖</div>
+                            </div>
+                            <video id="userMainView" class="user-main-view" autoplay muted style="display: none;"></video>
+                            <div class="video-label" id="mainLabel">AI Assistant</div>
+                        </div>
+                        
+                        <div class="pip-video" id="pipVideo" onclick="switchView()">
+                            <video id="userPipView" class="pip-user-video" autoplay muted></video>
+                            <div class="pip-ai-view" id="aiPipView" style="display: none;">
+                                <div class="pip-ai-avatar">🤖</div>
+                            </div>
+                        </div>
+                        
+                        <button class="switch-view-btn" onclick="switchView()" title="Switch View">⇄</button>
                     </div>
-                    <video id="userMainView" class="user-main-view" autoplay muted style="display: none;"></video>
-                    <div class="video-label" id="mainLabel">AI Assistant</div>
+                    
+                    <div class="status-bar" id="voiceStatus">🔇 Voice Ready</div>
                 </div>
                 
-                <!-- Picture-in-Picture Display -->
-                <div class="pip-video" id="pipVideo" onclick="switchView()">
-                    <video id="userPipView" class="pip-user-video" autoplay muted></video>
-                    <div class="pip-ai-view" id="aiPipView" style="display: none;">
-                        <div class="pip-ai-avatar">🤖</div>
+                <!-- Right Side - Chat -->
+                <div class="chat-section">
+                    <div class="chat-container" id="chatContainer"></div>
+                    
+                    <div class="controls">
+                        <input type="text" id="messageInput" placeholder="Type message...">
+                        <button onclick="sendMessage()">Send</button>
+                        <button onclick="endSession()" class="end-btn">End</button>
                     </div>
                 </div>
-                
-                <!-- View Switch Button -->
-                <button class="switch-view-btn" onclick="switchView()">🔄 Switch View</button>
-            </div>
-            
-
-            
-            <div class="status-bar" id="voiceStatus">🔇 Voice Ready</div>
-            
-            <div class="chat-container" id="chatContainer"></div>
-            
-            <div class="controls">
-                <input type="text" id="messageInput" placeholder="Type your message or just speak naturally...">
-                <button onclick="sendMessage()">Send</button>
-                <button onclick="endSession()">End</button>
             </div>
         </div>
     </div>

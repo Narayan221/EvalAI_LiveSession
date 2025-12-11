@@ -14,49 +14,47 @@ class AISessionManager:
         self.conversation_history: List[Dict] = []
         self.session_active = False
         self.session_context = ""
-        self.conversation_mode = "gitter"  # gitter or bargain
+        self.conversation_mode = "gitter"
 
     async def start_session(self, title: str, description: str) -> str:
         self.session_title = title
         self.session_description = description.strip() if description else ""
         self.session_active = True
         self.conversation_history = []
-        self.conversation_mode = "gitter"  # Start with casual mode
+        self.conversation_mode = "gitter"
 
         # Check if description is provided
         has_description = bool(self.session_description)
         
         if has_description:
-            # With description - provide structured session flow
-            self.session_context = f"""You are an AI session leader for: '{title}'
+            # With description - focused session
+            self.session_context = f"""You are Alex, an AI session leader. Your ONLY allowed topic is: {title}
+
 Description: {description}
 
-SESSION FLOW GUIDANCE:
-1. INTRODUCTION: Introduce yourself and welcome participants
-2. SESSION OVERVIEW: Present the session title and explain the agenda based on the description
-3. CONTENT DELIVERY: Cover the topics mentioned in the description
-4. ENGAGEMENT: Ask relevant questions and encourage participation
-5. CONCLUSION: Summarize key points
+ABSOLUTE RULES:
+- You can ONLY discuss {title} - nothing else
+- NEVER discuss any other topic under any circumstances
+- If asked about other topics, redirect to {title}
+- You are FORBIDDEN from changing topics
 
-Start with introduction, present the session overview based on the description, and begin the structured content delivery."""
+Your sole purpose is discussing {title}. Give a brief welcome about {title}. NO formatting."""
         else:
-            # Without description - open conversation
-            self.session_context = f"""You are an AI conversation partner for: '{title}'
+            # Without description - focused conversation
+            self.session_context = f"""You are Alex, an AI conversation partner. Your ONLY allowed topic is: {title}
 
-Since no specific description was provided, this will be an open conversation about the topic.
+ABSOLUTE RULES:
+- You can ONLY discuss {title} - nothing else
+- NEVER discuss any other topic under any circumstances  
+- If asked about other topics, redirect to {title}
+- You are FORBIDDEN from changing topics
 
-Your approach:
-1. INTRODUCTION: Introduce yourself and welcome the participant
-2. TOPIC EXPLORATION: Ask what specific aspects of '{title}' they'd like to discuss
-3. ADAPTIVE CONVERSATION: Follow their interests and provide relevant insights
-4. ENGAGEMENT: Keep the conversation interactive and helpful
-
-Start with a warm introduction and ask what aspects of the topic they're most interested in exploring."""
+Your sole purpose is discussing {title}. Introduce {title} and ask what aspects they'd like to explore. NO formatting."""
 
         response = await self.client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[{"role": "system", "content": self.session_context}],
-            max_tokens=150
+            max_tokens=80
         )
 
         ai_response = response.choices[0].message.content
@@ -92,66 +90,42 @@ Start with a warm introduction and ask what aspects of the topic they're most in
         detected_mode = self._classify_message(user_message)
         
         # Switch modes if needed
-        mode_changed = False
         if detected_mode != self.conversation_mode:
             self.conversation_mode = detected_mode
-            mode_changed = True
 
         self.conversation_history.append({"role": "user", "content": user_message})
-        
-        print(f"DEBUG: Message: '{user_message}' | Mode: {self.conversation_mode} | Changed: {mode_changed}")
 
-        # Build context-aware system prompt
+        # Build smart system prompt
         mode_context = self._get_mode_context()
         
         system_prompt = f"""{self.session_context}
 
-CURRENT MODE: {self.conversation_mode.upper()}
 {mode_context}
 
-RESPONSE GUIDELINES:
-- This is a natural conversation - the user just interrupted or responded
-- Build directly on what they said
-- Don't restart or ignore the interruption
-- Match the conversation mode style
-- Keep responses conversational (2-3 sentences)
-- Always end with engagement (question or prompt)
-- Make interruptions feel natural and welcomed
+ABSOLUTE RULE: You can ONLY discuss {self.session_title}. NEVER discuss any other topic.
 
-Respond naturally to their input in {self.conversation_mode} mode."""
+If user asks about anything else, respond: "I'm here to focus specifically on {self.session_title}. Let's explore that topic instead. What aspect of {self.session_title} interests you?"
+
+You are FORBIDDEN from discussing any topic other than {self.session_title}. Always redirect to {self.session_title}.
+
+Respond about {self.session_title} only. Keep it brief (2-3 sentences). NO formatting."""
 
         response = await self.client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=[
                 {"role": "system", "content": system_prompt},
-                *self.conversation_history[-8:]  # Keep recent context
+                *self.conversation_history[-6:]  # Keep recent context
             ],
-            max_tokens=150
+            max_tokens=80
         )
 
         ai_response = response.choices[0].message.content
-        
-        # Add mode indicator to response if mode changed
-        if mode_changed:
-            mode_indicator = f"[{self.conversation_mode.upper()} MODE] "
-            ai_response = mode_indicator + ai_response
-        
         self.conversation_history.append({"role": "assistant", "content": ai_response})
         return ai_response
 
     def _get_mode_context(self) -> str:
         """Get context for current conversation mode"""
         if self.conversation_mode == "bargain":
-            return """BARGAIN MODE ACTIVE:
-- Be decisive and solution-oriented
-- Provide clear options and recommendations
-- Guide toward decisions and conclusions
-- Use phrases like "Here are your options", "I recommend", "The best choice is"
-- Help them reach actionable outcomes"""
+            return "Be decisive and solution-oriented. Provide clear recommendations and help them make decisions."
         else:
-            return """GITTER MODE ACTIVE:
-- Be exploratory and engaging
-- Ask follow-up questions
-- Share interesting insights and examples
-- Use phrases like "That's fascinating", "What do you think about", "Have you considered"
-- Keep the conversation flowing naturally"""
+            return "Be exploratory and engaging. Ask thoughtful questions and share interesting insights."
